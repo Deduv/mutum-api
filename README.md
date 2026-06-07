@@ -1,96 +1,139 @@
-# DevBoard API (MVP)
+# DevBoard API
 
-O DevBoard é uma plataforma de gerenciamento de projetos e tarefas desenhada com um escopo objetivo para pequenas equipes de desenvolvimento de software e profissionais autônomos. 
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-Esta API fornece o motor centralizado, focado na resolução dos relacionamentos e no isolamento de informações entre usuários (Tenant isolation) de forma robusta e performática.
+DevBoard API is a powerful and robust backend engine tailored for project and task management, designed specifically for small software development teams and independent professionals. 
 
-## 🚀 Features
+Built with scalability, performance, and strict tenant isolation in mind, this API handles the complex relationships between users, their projects, and their tasks seamlessly, ensuring absolute data privacy.
 
-- **Cadastro de Usuários**: Registro seguro e criptografado.
-- **Autenticação JWT**: Login e geração de Tokens.
-- **Perfil Autenticado**: Endpoint seguro para consulta dos dados do próprio usuário (`/me`).
-- **CRUD de Projetos**: Gerenciamento completo de projetos sob a propriedade exclusiva do usuário.
-- **CRUD de Tarefas**: Gerenciamento completo de tarefas atreladas a um projeto válido.
-- **Isolamento por Usuário (Tenant Isolation)**: Um usuário jamais consegue acessar, editar ou excluir projetos e tarefas de terceiros.
-- **Migrações Automatizadas**: Versionamento estruturado do banco de dados utilizando Alembic.
-- **Testes Automatizados**: Suíte com cobertura ponta a ponta utilizando Pytest e banco in-memory isolado.
-- **Integração Contínua (CI)**: Pipeline no GitHub Actions validando os testes e estilo do código a cada push/pull request.
-- **Ambiente Dockerizado**: Contêineres configurados para garantir a reprodutibilidade 100% fiel.
+## Features
+- **JWT Authentication**: Secure login and token generation.
+- **User Management**: Encrypted user registration and private profile retrieval.
+- **Project Management**: Full CRUD operations for projects, strictly scoped to their owners.
+- **Task Management**: Full CRUD operations for tasks hierarchically attached to projects.
+- **CRUD Operations**: Standardized operations and responses across all entities.
+- **Tenant Isolation**: Users can never access, edit, or delete projects and tasks belonging to third parties.
+- **Dockerized Deployment**: Fully containerized environment ensuring 100% reproducibility.
+- **PostgreSQL Persistence**: Robust transactional data integrity using PostgreSQL.
+- **Nginx Reverse Proxy**: Secure routing and load balancing handling external HTTP/HTTPS traffic.
+- **HTTPS with Let's Encrypt**: End-to-end encryption secured by Certbot SSL certificates.
+- **AWS EC2 Deployment**: Cloud-hosted infrastructure for high availability.
 
-## 🏗️ Arquitetura
+## Tech Stack
+- **Python** (3.13)
+- **FastAPI**
+- **SQLAlchemy** (2.0)
+- **PostgreSQL**
+- **Docker**
+- **Docker Compose**
+- **Nginx**
+- **JWT Authentication**
+- **AWS EC2**
+- **Certbot / Let's Encrypt**
 
-O sistema segue uma separação limpa de responsabilidades dividida em camadas, garantindo manutenibilidade e flexibilidade:
+## Architecture
 
-```text
-FastAPI
-   ↓
-Services
-   ↓
-SQLAlchemy
-   ↓
-PostgreSQL
+The system follows a clean, layered architectural approach to separate concerns and ensure maintainability:
+
+```mermaid
+graph TD;
+    Client-->Nginx;
+    Nginx-->FastAPI;
+    FastAPI-->Services;
+    Services-->SQLAlchemy;
+    SQLAlchemy-->PostgreSQL;
 ```
 
-- **FastAPI**: Atua como a camada HTTP/API, sendo responsável pelos roteadores (endpoints), injeção de dependências e validação tipada estrita via Pydantic.
-- **Services**: Camada responsável por isolar as regras de negócio. Todo o controle de permissão (tenant isolation) fica encapsulado aqui, impedindo que a API acesse o banco de dados diretamente e acople a lógica de negócio à rota web.
-- **SQLAlchemy**: O ORM (Object Relational Mapper) em sua versão mais moderna (2.0), abstraindo as interações entre o Python e as tabelas SQL.
-- **PostgreSQL**: O banco de dados relacional oficial utilizado, garantindo a integridade transacional profunda.
-- **Alembic**: O motor de versionamento responsável por rastrear, gerar e aplicar alterações estruturais (DDLs) no banco de dados, sincronizado de forma inteligente ao modelo.
+- **Nginx**: Acts as the reverse proxy, terminating HTTPS via Let's Encrypt and forwarding requests to the FastAPI backend.
+- **FastAPI**: The presentation layer handling HTTP routing, request/response validation (via Pydantic), and dependency injection.
+- **Services**: The core business logic layer. All tenant isolation rules and permissions are encapsulated here, preventing the API from directly querying the database and keeping business rules decoupled from web routes.
+- **SQLAlchemy**: The modern Object Relational Mapper (ORM) bridging Python objects to the PostgreSQL tables.
+- **PostgreSQL**: The production-grade relational database ensuring ACID transactions.
+- **Alembic**: The database versioning tool tracking and applying schema migrations dynamically.
 
-## 🛡️ Qualidade e CI
+## API Documentation
 
-O ciclo de vida do código é validado e padronizado automaticamente por um Pipeline de Integração Contínua (CI) operado via GitHub Actions.
+The complete, interactive Swagger documentation is available online at:
+[https://api.labprojects.dev.br/docs](https://api.labprojects.dev.br/docs)
 
-- **Ruff**: Ferramenta linter e formatter de alta-performance instalada para bloquear anti-patterns no Python e garantir a homogeneidade do estilo visual em toda a equipe.
-- **Pytest**: Arquitetura automatizada responsável por executar instâncias dinâmicas e isoladas no SQLite. Ele roda agressivas rotinas de regressão garantindo que falhas de regras de isolamento sejam pegas automaticamente antes do Deploy.
+## Running Locally
 
-> A cada PR ou Commit enviado para a plataforma, o GitHub Actions engatilha e executa tanto o Ruff quanto o Pytest.
+The local development environment is fully encapsulated. You only need Docker and Docker Compose installed.
 
-## 💻 Como Executar Localmente
-
-O ambiente de desenvolvimento está completamente envelopado. Você só precisa ter o Docker e Docker Compose na sua máquina.
-
-1. Clone o repositório e acesse a pasta raiz:
+1. Clone the repository:
    ```bash
-   git clone ...
+   git clone https://github.com/seu-usuario/devboard.git
    cd devboard
    ```
-2. Prepare as variáveis de ambiente baseando-se no arquivo de exemplo:
+2. Setup environment variables:
    ```bash
    cp .env.example .env
    ```
-3. Suba a infraestrutura pesada (API e Database) em plano de fundo:
+3. Start the infrastructure in the background:
    ```bash
    docker compose up -d
    ```
+The API will be accessible at `http://localhost:8000`. You can access the local interactive documentation at `http://localhost:8000/docs`.
 
-A API estará plenamente acessível em `http://localhost:8000`.
-Explore a documentação via Swagger iterativo acessando `http://localhost:8000/docs`.
+## Environment Variables
 
-## 🛠️ Scripts Úteis (Manutenção)
+The project uses `.env` files to manage configuration. Key variables include:
 
-Para a rotina interna de desenvolvimento e manutenção, acione a estrutura a partir de chamadas ao contêiner web:
+- `DATABASE_URL`: The full PostgreSQL connection string (e.g., `postgresql://user:password@db:5432/devboard`).
+- `SECRET_KEY`: A strong, randomly generated cryptographic key used to sign the JWT tokens.
+- `ALGORITHM`: The cryptographic algorithm for JWT (e.g., `HS256`).
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: The expiration time for authentication tokens.
 
-**Rodar a Suíte de Testes (Pytest):**
-```bash
-docker compose exec web python -m pytest -v
-```
+## Docker Deployment
 
-**Formatação Rápida de Código:**
-```bash
-docker compose exec web ruff format .
-```
+To deploy the application to a production server (like AWS EC2):
 
-**Validação de Complexidade/Linter:**
-```bash
-docker compose exec web ruff check . --fix
-```
+1. Clone the repository on the target server.
+2. Fill the production `.env` file with secure credentials.
+3. Build and launch the production containers using Docker Compose:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+4. Setup Nginx locally on the server or via a separate container to reverse-proxy traffic to port `8000`.
+5. Issue an SSL certificate using Certbot for your domain.
 
-## 🌐 Deploy
+## Authentication Flow
 
-*Em breve, a API estará disponível publicamente.*
+The API secures routes using **JSON Web Tokens (JWT)**:
+1. The client sends a `POST` request to `/api/v1/auth/login` with their `username` (email) and `password`.
+2. The server validates the credentials and returns a signed `access_token`.
+3. For all subsequent requests to protected endpoints, the client must include the token in the HTTP Header: `Authorization: Bearer <token>`.
+4. The server's dependency injection decodes the token, extracts the user ID, and injects the `current_user` object into the path operation.
 
-Após o deploy automatizado para a nuvem ser realizado, adicionaremos aqui:
-- A URL Base da API hospedada.
-- O link de navegação direta para o Swagger na nuvem.
-- Instruções para experimentação interativa.
+## Main Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/login` | Authenticate user and receive JWT | No |
+| `POST` | `/api/v1/users/` | Register a new user account | No |
+| `GET` | `/api/v1/users/me` | Retrieve the authenticated user's profile | Yes |
+| `GET` | `/api/v1/projects/` | List all projects owned by the user | Yes |
+| `POST` | `/api/v1/projects/` | Create a new project | Yes |
+| `GET` | `/api/v1/tasks/` | List tasks within user's projects | Yes |
+| `POST` | `/api/v1/tasks/` | Create a new task within a project | Yes |
+
+## Production Environment
+
+This application is actively deployed and hosted on **AWS EC2**, serving requests securely via an **Nginx** reverse proxy equipped with HTTPS encryption provided by **Let's Encrypt**. 
+
+Base URL: `https://api.labprojects.dev.br`
+
+## Future Improvements
+
+- **WebSockets / Real-time Updates**: Implement live task updates for concurrent collaborators.
+- **Role-Based Access Control (RBAC)**: Expand permissions allowing multiple users to collaborate on the same project with distinct roles (Admin, Editor, Viewer).
+- **Task Comments and Attachments**: Enable users to discuss and upload files directly inside tasks.
+- **Automated Email Notifications**: Integrate an SMTP service for password resets and task assignments.
+
+## Author
+
+**Eduardo Santana**
