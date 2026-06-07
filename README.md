@@ -2,65 +2,95 @@
 
 O DevBoard é uma plataforma de gerenciamento de projetos e tarefas desenhada com um escopo objetivo para pequenas equipes de desenvolvimento de software e profissionais autônomos. 
 
-Esta API fornece o motor centralizado focado na resolução dos relacionamentos entre Tenants (usuários donos) de forma robusta e perfomática.
+Esta API fornece o motor centralizado, focado na resolução dos relacionamentos e no isolamento de informações entre usuários (Tenant isolation) de forma robusta e performática.
 
-## Stack Tecnológico 🚀
+## 🚀 Features
 
-- **Python 3.13**: Versão moderna focada em performance.
-- **FastAPI**: Framework web moderno, construído sob ASGI com serialização e tipagem explícita via Pydantic.
-- **SQLAlchemy 2.0**: O padrão ouro em Object Relational Mapper no Python.
-- **PostgreSQL**: Banco de dados relacional oficial de produção.
-- **Alembic**: Gerenciador versionado de banco de dados e migrações.
-- **Pytest**: Arquitetura automatizada de testes isolados.
-- **Ruff**: Linter e Formatter feito em Rust para ultra-velocidade na padronização de código.
-- **Docker & Docker Compose**: Setup local isolado que mimetiza o ambiente final.
+- **Cadastro de Usuários**: Registro seguro e criptografado.
+- **Autenticação JWT**: Login e geração de Tokens.
+- **Perfil Autenticado**: Endpoint seguro para consulta dos dados do próprio usuário (`/me`).
+- **CRUD de Projetos**: Gerenciamento completo de projetos sob a propriedade exclusiva do usuário.
+- **CRUD de Tarefas**: Gerenciamento completo de tarefas atreladas a um projeto válido.
+- **Isolamento por Usuário (Tenant Isolation)**: Um usuário jamais consegue acessar, editar ou excluir projetos e tarefas de terceiros.
+- **Migrações Automatizadas**: Versionamento estruturado do banco de dados utilizando Alembic.
+- **Testes Automatizados**: Suíte com cobertura ponta a ponta utilizando Pytest e banco in-memory isolado.
+- **Integração Contínua (CI)**: Pipeline no GitHub Actions validando os testes e estilo do código a cada push/pull request.
+- **Ambiente Dockerizado**: Contêineres configurados para garantir a reprodutibilidade 100% fiel.
 
-## Principais Endpoints 🔗
+## 🏗️ Arquitetura
 
-A API é rigorosamente segmentada em rotas versionadas (`/api/v1`). Exceto pela criação de usuário e login, **todos os outros endpoints exigem cabeçalho JWT de autenticação**.
+O sistema segue uma separação limpa de responsabilidades dividida em camadas, garantindo manutenibilidade e flexibilidade:
 
-- **Auth**: `POST /api/v1/auth/login` - Validação das credenciais e entrega do token.
-- **Users**: 
-  - `POST /api/v1/users/` - Cadastro.
-  - `GET /api/v1/users/me` - Consulta de dados sensíveis da própria conta.
-- **Projects**: CRUD protegido (`/api/v1/projects`). Listagens e buscas sempre retornam formato envelopado e isolamento estrito via Token.
-- **Tasks**: Hierarquia sob o Projeto. Apenas usuários que detenham um projeto válido podem registrar e gerenciar as respectivas tarefas.
+```text
+FastAPI
+   ↓
+Services
+   ↓
+SQLAlchemy
+   ↓
+PostgreSQL
+```
 
-> **Dica**: Confira nossa especificação interativa acessando `http://localhost:8000/docs` com o serviço rodando!
+- **FastAPI**: Atua como a camada HTTP/API, sendo responsável pelos roteadores (endpoints), injeção de dependências e validação tipada estrita via Pydantic.
+- **Services**: Camada responsável por isolar as regras de negócio. Todo o controle de permissão (tenant isolation) fica encapsulado aqui, impedindo que a API acesse o banco de dados diretamente e acople a lógica de negócio à rota web.
+- **SQLAlchemy**: O ORM (Object Relational Mapper) em sua versão mais moderna (2.0), abstraindo as interações entre o Python e as tabelas SQL.
+- **PostgreSQL**: O banco de dados relacional oficial utilizado, garantindo a integridade transacional profunda.
+- **Alembic**: O motor de versionamento responsável por rastrear, gerar e aplicar alterações estruturais (DDLs) no banco de dados, sincronizado de forma inteligente ao modelo.
 
-## Como Iniciar (Setup) ⚙️
+## 🛡️ Qualidade e CI
 
-O ambiente de desenvolvimento está envelopado. Você só precisa ter o Docker e Docker Compose instalados em sua máquina host.
+O ciclo de vida do código é validado e padronizado automaticamente por um Pipeline de Integração Contínua (CI) operado via GitHub Actions.
 
-1. Clone o repositório e acesse a pasta raiz.
-2. Prepare as variáveis de ambiente:
+- **Ruff**: Ferramenta linter e formatter de alta-performance instalada para bloquear anti-patterns no Python e garantir a homogeneidade do estilo visual em toda a equipe.
+- **Pytest**: Arquitetura automatizada responsável por executar instâncias dinâmicas e isoladas no SQLite. Ele roda agressivas rotinas de regressão garantindo que falhas de regras de isolamento sejam pegas automaticamente antes do Deploy.
+
+> A cada PR ou Commit enviado para a plataforma, o GitHub Actions engatilha e executa tanto o Ruff quanto o Pytest.
+
+## 💻 Como Executar Localmente
+
+O ambiente de desenvolvimento está completamente envelopado. Você só precisa ter o Docker e Docker Compose na sua máquina.
+
+1. Clone o repositório e acesse a pasta raiz:
+   ```bash
+   git clone ...
+   cd devboard
+   ```
+2. Prepare as variáveis de ambiente baseando-se no arquivo de exemplo:
    ```bash
    cp .env.example .env
    ```
-3. Suba toda a infraestrutura através do Compose:
+3. Suba a infraestrutura pesada (API e Database) em plano de fundo:
    ```bash
    docker compose up -d
    ```
-4. A API estará operacional sob `http://localhost:8000`.
 
-## Scripts Úteis 🛠️
+A API estará plenamente acessível em `http://localhost:8000`.
+Explore a documentação via Swagger iterativo acessando `http://localhost:8000/docs`.
 
-Para agilizar o desenvolvimento, os seguintes comandos devem ser rodados através de interação com o contêiner de backend:
+## 🛠️ Scripts Úteis (Manutenção)
 
-**Rodar Testes Automatizados (Pytest)**:
-A aplicação roda sua suíte dentro de um SQLite in-memory gerando resíduo nulo sobre o banco Postgres real de desenvolvimento:
+Para a rotina interna de desenvolvimento e manutenção, acione a estrutura a partir de chamadas ao contêiner web:
+
+**Rodar a Suíte de Testes (Pytest):**
 ```bash
 docker compose exec web python -m pytest -v
 ```
 
-**Formatação de Código (Ruff Formatter)**:
-Aplica automaticamente o estilo e re-organiza a estrutura visual do Python:
+**Formatação Rápida de Código:**
 ```bash
 docker compose exec web ruff format .
 ```
 
-**Checagem e Correção (Ruff Linter)**:
-Detecta problemas técnicos em importações não-utilizadas, complexidade ciclomática e falhas de tipagem:
+**Validação de Complexidade/Linter:**
 ```bash
 docker compose exec web ruff check . --fix
 ```
+
+## 🌐 Deploy
+
+*Em breve, a API estará disponível publicamente.*
+
+Após o deploy automatizado para a nuvem ser realizado, adicionaremos aqui:
+- A URL Base da API hospedada.
+- O link de navegação direta para o Swagger na nuvem.
+- Instruções para experimentação interativa.
