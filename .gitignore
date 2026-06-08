@@ -47,3 +47,19 @@ coverage.xml
 
 # Ruff
 .ruff_cache/
+
+# Logs
+*.log
+
+# Type checking caches
+.mypy_cache/
+
+# Alembic / database temporary backups
+alembic.ini.*
+*.bak
+*.sqlite3
+*.db
+
+# Operating system files
+.DS_Store
+Thumbs.db

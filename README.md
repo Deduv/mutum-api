@@ -11,11 +11,15 @@ DevBoard API is a powerful and robust backend engine tailored for project and ta
 Built with scalability, performance, and strict tenant isolation in mind, this API handles the complex relationships between users, their projects, and their tasks seamlessly, ensuring absolute data privacy.
 
 ## Features
-- **JWT Authentication**: Secure login and token generation.
+- **Public User Registration**: Open registration for new accounts.
+- **User Approval Workflow**: New accounts start as `PENDING` and require manual approval to become `ACTIVE`.
+- **JWT Authentication**: Secure login and token generation for approved users.
 - **User Management**: Encrypted user registration and private profile retrieval.
 - **Project Management**: Full CRUD operations for projects, strictly scoped to their owners.
+- **Project Deletion**: Secure deletion of projects with strict ownership validation.
 - **Task Management**: Full CRUD operations for tasks hierarchically attached to projects.
-- **CRUD Operations**: Standardized operations and responses across all entities.
+- **Task Deletion**: Secure deletion of tasks tied to user's projects.
+- **Cascade Delete on Projects**: Deleting a project automatically and safely removes all associated tasks.
 - **Tenant Isolation**: Users can never access, edit, or delete projects and tasks belonging to third parties.
 - **Dockerized Deployment**: Fully containerized environment ensuring 100% reproducibility.
 - **PostgreSQL Persistence**: Robust transactional data integrity using PostgreSQL.
@@ -103,11 +107,13 @@ To deploy the application to a production server (like AWS EC2):
 
 ## Authentication Flow
 
-The API secures routes using **JSON Web Tokens (JWT)**:
-1. The client sends a `POST` request to `/api/v1/auth/login` with their `username` (email) and `password`.
-2. The server validates the credentials and returns a signed `access_token`.
-3. For all subsequent requests to protected endpoints, the client must include the token in the HTTP Header: `Authorization: Bearer <token>`.
-4. The server's dependency injection decodes the token, extracts the user ID, and injects the `current_user` object into the path operation.
+The API secures routes using **JSON Web Tokens (JWT)** combined with an approval workflow:
+1. **Register**: The client sends a `POST` request to `/api/v1/users/` to create an account.
+2. **PENDING**: The new user is created with a `PENDING` status, meaning login is blocked.
+3. **Approval**: An administrator manually approves the user, changing their status to `ACTIVE`.
+4. **ACTIVE**: The user can now send a `POST` request to `/api/v1/auth/login` with their credentials.
+5. **JWT**: The server validates the credentials and `ACTIVE` status, returning a signed `access_token`.
+6. For all subsequent requests to protected endpoints, the client must include the token in the HTTP Header: `Authorization: Bearer <token>`.
 
 ## Main Endpoints
 
@@ -120,6 +126,16 @@ The API secures routes using **JSON Web Tokens (JWT)**:
 | `POST` | `/api/v1/projects/` | Create a new project | Yes |
 | `GET` | `/api/v1/tasks/` | List tasks within user's projects | Yes |
 | `POST` | `/api/v1/tasks/` | Create a new task within a project | Yes |
+| `DELETE` | `/api/v1/projects/{id}` | Delete a project and cascade delete its tasks | Yes |
+| `DELETE` | `/api/v1/tasks/{id}` | Delete a specific task | Yes |
+
+## Security
+
+- **JWT (JSON Web Tokens)**: Stateless and secure authentication mechanism.
+- **Tenant Isolation**: Deep database queries ensure users can never interact with data they don't own.
+- **Owner-based Access Control**: Every CRUD operation validates the `owner_id` against the decoded JWT subject.
+- **Protected Deletes**: Deletion endpoints rigorously check ownership before executing DB drops, preventing IDOR vulnerabilities.
+- **User Approval Workflow**: Registration is public, but access is private. Prevents spam or unauthorized access by keeping new users in a `PENDING` state until manually vetted.
 
 ## Production Environment
 
@@ -129,8 +145,9 @@ Base URL: `https://api.labprojects.dev.br`
 
 ## Future Improvements
 
-- **WebSockets / Real-time Updates**: Implement live task updates for concurrent collaborators.
+- **Admin Panel for User Approval**: A dedicated web interface to approve or reject `PENDING` users.
 - **Role-Based Access Control (RBAC)**: Expand permissions allowing multiple users to collaborate on the same project with distinct roles (Admin, Editor, Viewer).
+- **WebSockets / Real-time Updates**: Implement live task updates for concurrent collaborators.
 - **Task Comments and Attachments**: Enable users to discuss and upload files directly inside tasks.
 - **Automated Email Notifications**: Integrate an SMTP service for password resets and task assignments.
 
