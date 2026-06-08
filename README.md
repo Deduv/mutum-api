@@ -81,7 +81,9 @@ The local development environment is fully encapsulated. You only need Docker an
    ```bash
    docker compose up -d
    ```
-The API will be accessible at `http://localhost:8000`. You can access the local interactive documentation at `http://localhost:8000/docs`.
+The API will be accessible locally at `http://localhost:8000`. You can access the local interactive documentation at `http://localhost:8000/docs`.
+
+> **Note**: For the live production URLs (Frontend, API, and Swagger), please refer to the **Production Environment** section below.
 
 ## Environment Variables
 
@@ -141,7 +143,9 @@ The API secures routes using **JSON Web Tokens (JWT)** combined with an approval
 
 This application is actively deployed and hosted on **AWS EC2**, serving requests securely via an **Nginx** reverse proxy equipped with HTTPS encryption provided by **Let's Encrypt**. 
 
-Base URL: `https://api.labprojects.dev.br`
+- **Frontend Application**: [https://app.labprojects.dev.br](https://app.labprojects.dev.br)
+- **API Base URL**: [https://api.labprojects.dev.br](https://api.labprojects.dev.br)
+- **Interactive Swagger Docs**: [https://api.labprojects.dev.br/docs](https://api.labprojects.dev.br/docs)
 
 ## Future Improvements
 
