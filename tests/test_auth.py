@@ -1,3 +1,5 @@
+from app.models.user import User
+
 def test_create_user(client):
     response = client.post(
         "/api/v1/users/",
@@ -13,7 +15,7 @@ def test_create_user(client):
     assert "password_hash" not in response.json()
 
 
-def test_login_success(client):
+def test_login_success(client, db_session):
     client.post(
         "/api/v1/users/",
         json={
@@ -22,6 +24,11 @@ def test_login_success(client):
             "password": "password",
         },
     )
+    
+    user = db_session.query(User).filter(User.email == "login@example.com").first()
+    user.status = "ACTIVE"
+    db_session.commit()
+    
     response = client.post(
         "/api/v1/auth/login",
         data={"username": "login@example.com", "password": "password"},

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, List
+from app.models.user import UserStatus
 
 
 class UserBase(BaseModel):
@@ -14,6 +15,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    status: UserStatus
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

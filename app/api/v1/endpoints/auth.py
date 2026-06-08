@@ -6,6 +6,7 @@ from app.api.deps import get_db
 from app.core.security import verify_password, create_access_token
 from app.services import user_service
 from app.schemas.token import Token
+from app.models.user import UserStatus
 
 router = APIRouter()
 
@@ -23,6 +24,12 @@ def login_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    if user.status != UserStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account pending approval.",
         )
 
     access_token = create_access_token(subject=user.id)

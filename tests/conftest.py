@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.api.deps import get_db
 from app.db.base import Base
+from app.models.user import User
 
 # Usa SQLite in-memory para testes em ambiente 100% isolado
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -47,7 +48,7 @@ def client(db_session):
 
 
 @pytest.fixture(scope="function")
-def test_user(client):
+def test_user(client, db_session):
     user_data = {
         "name": "Test User",
         "email": "test@pytest.com",
@@ -55,6 +56,12 @@ def test_user(client):
     }
     response = client.post("/api/v1/users/", json=user_data)
     assert response.status_code == 201
+    
+    # Ativa o usuário no banco para permitir o login na suíte de testes
+    user = db_session.query(User).filter(User.email == user_data["email"]).first()
+    user.status = "ACTIVE"
+    db_session.commit()
+    
     return user_data
 
 
