@@ -1,7 +1,6 @@
-import pytest
 from datetime import datetime, timedelta, timezone
 from app.models.organization_member import OrganizationMember
-from app.models.organization_invite import OrganizationInvite, InviteStatus
+from app.models.organization_invite import OrganizationInvite
 
 def test_owner_create_invite(client, auth_token, test_user):
     resp_org = client.post("/api/v1/organizations/", json={"name": "Org 1"}, headers=auth_token)

@@ -1,10 +1,6 @@
 import pytest
-from app.models.user import User
 from app.schemas.user import UserCreate
 from app.services import user_service
-from app.models.organization_invite import InviteStatus
-from app.services import organization_invite_service
-from app.schemas.organization_invite import OrganizationInviteCreate
 
 def test_user_creation_normalizes_email(db_session):
     user_in = UserCreate(email=" Mixed.Case@EXAMPLE.com ", password="password123")

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember, OrganizationRole
 from app.schemas.organization import (

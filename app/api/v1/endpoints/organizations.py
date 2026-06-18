@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
@@ -18,8 +18,6 @@ from app.schemas.organization_invite import (
     OrganizationInviteResponse,
     OrganizationInviteListResponse
 )
-from app.models.user import User
-from app.services import organization_service
 
 router = APIRouter()
 

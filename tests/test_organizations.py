@@ -1,4 +1,3 @@
-import pytest
 from app.models.organization_member import OrganizationMember
 from app.models.project import Project
 
@@ -16,8 +15,7 @@ def test_create_organization(client, auth_token, db_session, test_user):
     assert member.role == "OWNER"
 
 def test_list_organizations(client, auth_token):
-    resp_create = client.post("/api/v1/organizations/", json={"name": "Org 1"}, headers=auth_token)
-    org_id = resp_create.json()["id"]
+    client.post("/api/v1/organizations/", json={"name": "Org 1"}, headers=auth_token)
     
     resp = client.get("/api/v1/organizations/", headers=auth_token)
     assert resp.status_code == 200
@@ -245,7 +243,6 @@ def test_delete_organization(client, auth_token, auth_token_2, test_user_2, db_s
     # Remove the extra member
     client.delete(f"/api/v1/organizations/{org_id}/members/{test_user_2['id']}", headers=auth_token)
 
-    from app.models.project import Project
     project = Project(name="Proj", organization_id=org_id, owner_id=test_user_2["id"])
     db_session.add(project)
     db_session.commit()

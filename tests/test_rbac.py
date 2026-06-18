@@ -1,4 +1,3 @@
-import pytest
 from app.models.organization_member import OrganizationMember
 from app.models.project import Project
 

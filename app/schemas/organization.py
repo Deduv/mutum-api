@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from app.models.organization_member import OrganizationRole
-from app.schemas.user import UserResponse
 
 class OrganizationBase(BaseModel):
     name: str

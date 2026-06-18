@@ -1,4 +1,3 @@
-import pytest
 
 def test_delete_organization_with_invites(client, auth_token):
     resp_org = client.post("/api/v1/organizations/", json={"name": "Org to Delete"}, headers=auth_token)
