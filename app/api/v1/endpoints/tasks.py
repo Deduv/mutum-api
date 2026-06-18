@@ -73,5 +73,5 @@ def delete_task(
         raise HTTPException(
             status_code=404, detail="Task not found or you don't have access"
         )
-    task_service.delete_task(db, db_task=task)
+    task_service.delete_task(db, db_task=task, owner_id=current_user.id)
     return None

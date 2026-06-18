@@ -7,6 +7,7 @@ from app.schemas.task import TaskCreate, TaskUpdate
 from fastapi import HTTPException, status
 from sqlalchemy import or_
 from app.models.organization_member import OrganizationMember
+from app.core.rbac import check_project_action
 
 def _get_user_organization_ids(db: Session, user_id: int) -> list[int]:
     members = db.query(OrganizationMember).filter(OrganizationMember.user_id == user_id).all()
@@ -54,6 +55,7 @@ def _check_user_exists(db: Session, user_id: int) -> User:
 
 def create_task(db: Session, task_in: TaskCreate, owner_id: int) -> Task:
     project = _check_project_ownership(db, task_in.project_id, owner_id)
+    check_project_action(db, project, owner_id, ["OWNER", "ADMIN", "MEMBER"])
     if task_in.assigned_user_id:
         _check_user_exists(db, task_in.assigned_user_id)
         _check_user_in_organization(db, task_in.assigned_user_id, project.organization_id)
@@ -103,6 +105,7 @@ def count_tasks(db: Session, owner_id: int) -> int:
 
 
 def update_task(db: Session, db_task: Task, task_in: TaskUpdate, owner_id: int) -> Task:
+    check_project_action(db, db_task.project, owner_id, ["OWNER", "ADMIN", "MEMBER"])
     if task_in.assigned_user_id:
         _check_user_exists(db, task_in.assigned_user_id)
         _check_user_in_organization(db, task_in.assigned_user_id, db_task.project.organization_id)
@@ -117,6 +120,7 @@ def update_task(db: Session, db_task: Task, task_in: TaskUpdate, owner_id: int) 
     return db_task
 
 
-def delete_task(db: Session, db_task: Task) -> None:
+def delete_task(db: Session, db_task: Task, owner_id: int) -> None:
+    check_project_action(db, db_task.project, owner_id, ["OWNER", "ADMIN"])
     db.delete(db_task)
     db.commit()
