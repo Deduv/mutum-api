@@ -56,6 +56,7 @@ def test_user(client, db_session):
     }
     response = client.post("/api/v1/users/", json=user_data)
     assert response.status_code == 201
+    user_data["id"] = response.json()["id"]
     
     # Ativa o usuário no banco para permitir o login na suíte de testes
     user = db_session.query(User).filter(User.email == user_data["email"]).first()
@@ -70,6 +71,31 @@ def auth_token(client, test_user):
     response = client.post(
         "/api/v1/auth/login",
         data={"username": test_user["email"], "password": test_user["password"]},
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture(scope="function")
+def test_user_2(client, db_session):
+    user_data = {
+        "name": "Test User 2",
+        "email": "test2@pytest.com",
+        "password": "testpassword2",
+    }
+    response = client.post("/api/v1/users/", json=user_data)
+    assert response.status_code == 201
+    user_data["id"] = response.json()["id"]
+    user = db_session.query(User).filter(User.email == user_data["email"]).first()
+    user.status = "ACTIVE"
+    db_session.commit()
+    return user_data
+
+@pytest.fixture(scope="function")
+def auth_token_2(client, test_user_2):
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": test_user_2["email"], "password": test_user_2["password"]},
     )
     assert response.status_code == 200
     token = response.json()["access_token"]

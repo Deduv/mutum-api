@@ -12,7 +12,7 @@ class Project(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
 
     owner = relationship("User", back_populates="projects")
     organization = relationship("Organization")

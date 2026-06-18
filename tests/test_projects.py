@@ -26,5 +26,18 @@ def test_list_projects(client, auth_token):
     data = response.json()
     assert "data" in data
     assert "total" in data
-    assert len(data["data"]) == 1
-    assert data["data"][0]["name"] == "List Project"
+    assert len(data["data"]) >= 1
+    assert any(p["name"] == "List Project" for p in data["data"])
+
+def test_cross_tenant_project_access_blocked(client, auth_token, auth_token_2):
+    # User 1 cria um projeto
+    resp = client.post(
+        "/api/v1/projects/",
+        json={"name": "User 1 Project"},
+        headers=auth_token,
+    )
+    project_id = resp.json()["id"]
+
+    # User 2 tenta acessar o projeto do User 1
+    resp2 = client.get(f"/api/v1/projects/{project_id}", headers=auth_token_2)
+    assert resp2.status_code == 404

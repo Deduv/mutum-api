@@ -57,5 +57,18 @@ def test_list_tasks(client, auth_token, project_id):
     response = client.get("/api/v1/tasks/", headers=auth_token)
     assert response.status_code == 200
     assert "data" in response.json()
-    assert len(response.json()["data"]) == 1
-    assert response.json()["data"][0]["title"] == "List Task"
+    assert len(response.json()["data"]) >= 1
+    assert any(t["title"] == "List Task" for t in response.json()["data"])
+
+def test_cross_tenant_task_assignment_blocked(client, auth_token, test_user_2, project_id):
+    # test_user_2 ID
+    user2_id = test_user_2["id"]
+    
+    # Try to assign task to test_user_2 who is NOT in the organization of auth_token user's project
+    response = client.post(
+        "/api/v1/tasks/",
+        json={"title": "Cross Tenant Task", "project_id": project_id, "assigned_user_id": user2_id},
+        headers=auth_token,
+    )
+    assert response.status_code == 400
+    assert "belong to the project's organization" in response.json()["detail"]

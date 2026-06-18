@@ -1,11 +1,42 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.project import Project
+from app.models.organization_member import OrganizationMember
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from sqlalchemy import or_
+
+def _get_user_organization_ids(db: Session, user_id: int) -> list[int]:
+    members = db.query(OrganizationMember).filter(OrganizationMember.user_id == user_id).all()
+    return [m.organization_id for m in members]
+
+def _get_user_personal_workspace_id(db: Session, user_id: int) -> Optional[int]:
+    from app.models.organization import Organization
+    member = (
+        db.query(OrganizationMember)
+        .join(Organization)
+        .filter(
+            OrganizationMember.user_id == user_id,
+            OrganizationMember.role == "OWNER",
+            Organization.name.like("Personal Workspace%")
+        )
+        .first()
+    )
+    if member:
+        return member.organization_id
+    
+    member = db.query(OrganizationMember).filter(
+        OrganizationMember.user_id == user_id, 
+        OrganizationMember.role == "OWNER"
+    ).first()
+    return member.organization_id if member else None
 
 
 def create_project(db: Session, project_in: ProjectCreate, owner_id: int) -> Project:
-    db_project = Project(**project_in.model_dump(), owner_id=owner_id)
+    default_org_id = _get_user_personal_workspace_id(db, owner_id)
+    if not default_org_id:
+        raise ValueError("User does not have a valid organization to create projects.")
+    
+    db_project = Project(**project_in.model_dump(), owner_id=owner_id, organization_id=default_org_id)
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
@@ -13,9 +44,13 @@ def create_project(db: Session, project_in: ProjectCreate, owner_id: int) -> Pro
 
 
 def get_project_by_id(db: Session, project_id: int, owner_id: int) -> Optional[Project]:
+    org_ids = _get_user_organization_ids(db, owner_id)
     return (
         db.query(Project)
-        .filter(Project.id == project_id, Project.owner_id == owner_id)
+        .filter(
+            Project.id == project_id,
+            or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id)
+        )
         .first()
     )
 
@@ -23,9 +58,10 @@ def get_project_by_id(db: Session, project_id: int, owner_id: int) -> Optional[P
 def list_projects(
     db: Session, owner_id: int, skip: int = 0, limit: int = 100
 ) -> List[Project]:
+    org_ids = _get_user_organization_ids(db, owner_id)
     return (
         db.query(Project)
-        .filter(Project.owner_id == owner_id)
+        .filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
         .offset(skip)
         .limit(limit)
         .all()
@@ -33,7 +69,12 @@ def list_projects(
 
 
 def count_projects(db: Session, owner_id: int) -> int:
-    return db.query(Project).filter(Project.owner_id == owner_id).count()
+    org_ids = _get_user_organization_ids(db, owner_id)
+    return (
+        db.query(Project)
+        .filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
+        .count()
+    )
 
 
 def update_project(
