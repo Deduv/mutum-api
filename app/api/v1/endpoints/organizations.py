@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
+from app.models.user import User
+from app.services import organization_service, organization_invite_service
 from app.schemas.organization import (
     OrganizationCreate,
     OrganizationUpdate,
@@ -10,6 +12,11 @@ from app.schemas.organization import (
     OrganizationMemberUpdate,
     OrganizationMemberResponse,
     OrganizationMemberListResponse
+)
+from app.schemas.organization_invite import (
+    OrganizationInviteCreate,
+    OrganizationInviteResponse,
+    OrganizationInviteListResponse
 )
 from app.models.user import User
 from app.services import organization_service
@@ -119,3 +126,49 @@ def delete_organization_member(
         db, organization_id=organization_id, target_user_id=user_id, user_id=current_user.id
     )
     return None
+
+@router.post("/{organization_id}/invites", response_model=OrganizationInviteResponse, status_code=status.HTTP_201_CREATED)
+def create_organization_invite(
+    organization_id: int,
+    invite_in: OrganizationInviteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return organization_invite_service.create_invite(
+        db, organization_id=organization_id, invite_in=invite_in, user_id=current_user.id
+    )
+
+@router.get("/{organization_id}/invites", response_model=OrganizationInviteListResponse)
+def list_organization_invites(
+    organization_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return organization_invite_service.list_invites(
+        db, organization_id=organization_id, user_id=current_user.id, skip=skip, limit=limit
+    )
+
+@router.delete("/{organization_id}/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_organization_invite(
+    organization_id: int,
+    invite_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    organization_invite_service.revoke_invite(
+        db, organization_id=organization_id, invite_id=invite_id, user_id=current_user.id
+    )
+    return None
+
+@router.post("/invites/{token}/accept", status_code=status.HTTP_200_OK)
+def accept_organization_invite(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    organization_invite_service.accept_invite(
+        db, token=token, user_id=current_user.id
+    )
+    return {"status": "accepted"}

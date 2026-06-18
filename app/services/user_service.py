@@ -39,7 +39,8 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
 
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
-    return db.query(User).filter(User.email == email).first()
+    normalized_email = email.strip().lower()
+    return db.query(User).filter(User.email == normalized_email).first()
 
 
 def list_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:

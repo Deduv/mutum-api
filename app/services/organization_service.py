@@ -60,6 +60,10 @@ def delete_organization(db: Session, organization_id: int, user_id: int) -> None
     if members_count > 1:
         raise HTTPException(status_code=400, detail="Cannot delete organization with extra members")
         
+    # Delete invites
+    from app.models.organization_invite import OrganizationInvite
+    db.query(OrganizationInvite).filter(OrganizationInvite.organization_id == organization_id).delete()
+    
     # Delete the single owner member first, then the org
     member = db.query(OrganizationMember).filter(OrganizationMember.organization_id == organization_id).first()
     if member:
