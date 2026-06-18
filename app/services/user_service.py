@@ -8,30 +8,32 @@ from app.models.organization_member import OrganizationMember, OrganizationRole
 
 
 def create_user(db: Session, user_in: UserCreate) -> User:
-    db_user = User(
-        name=user_in.name,
-        email=user_in.email,
-        password_hash=get_password_hash(user_in.password),
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    try:
+        db_user = User(
+            name=user_in.name,
+            email=user_in.email,
+            password_hash=get_password_hash(user_in.password),
+        )
+        db.add(db_user)
+        db.flush()
 
-    org_name = f"Personal Workspace - {db_user.name}" if db_user.name else f"Personal Workspace - User {db_user.id}"
-    db_org = Organization(name=org_name)
-    db.add(db_org)
-    db.commit()
-    db.refresh(db_org)
+        org_name = f"Personal Workspace - {db_user.name}" if db_user.name else f"Personal Workspace - User {db_user.id}"
+        db_org = Organization(name=org_name)
+        db.add(db_org)
+        db.flush()
 
-    db_member = OrganizationMember(
-        user_id=db_user.id,
-        organization_id=db_org.id,
-        role=OrganizationRole.OWNER
-    )
-    db.add(db_member)
-    db.commit()
-
-    return db_user
+        db_member = OrganizationMember(
+            user_id=db_user.id,
+            organization_id=db_org.id,
+            role=OrganizationRole.OWNER
+        )
+        db.add(db_member)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:

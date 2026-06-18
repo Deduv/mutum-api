@@ -13,6 +13,16 @@ def test_user_creation_normalizes_email(db_session):
     # Assert it was saved normalized
     assert user.email == "mixed.case@example.com"
 
+def test_user_creation_duplicate_case_insensitive(db_session):
+    user_in_1 = UserCreate(email="duplicate@example.com", password="password123")
+    user_service.create_user(db_session, user_in=user_in_1)
+    
+    # Second creation with different case should fail DB unique constraint or Pydantic validation (actually DB will fail)
+    user_in_2 = UserCreate(email=" DUPLICATE@ExAmPlE.com ", password="password456")
+    from sqlalchemy.exc import IntegrityError
+    with pytest.raises(IntegrityError):
+        user_service.create_user(db_session, user_in=user_in_2)
+
 def test_user_login_with_different_case(client, db_session):
     # Setup user
     from app.models.user import UserStatus

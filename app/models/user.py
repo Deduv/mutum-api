@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -15,7 +15,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING, server_default=UserStatus.ACTIVE.value, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -24,3 +24,7 @@ class User(Base):
         "Project", back_populates="owner", cascade="all, delete-orphan"
     )
     assigned_tasks = relationship("Task", back_populates="assigned_user")
+
+    __table_args__ = (
+        Index("ix_users_email_lower", func.lower(email), unique=True),
+    )
