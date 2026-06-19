@@ -26,15 +26,16 @@ def create_project(
 
 @router.get("/", response_model=ProjectListResponse)
 def read_projects(
+    organization_id: int | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     projects = project_service.list_projects(
-        db, owner_id=current_user.id, skip=skip, limit=limit
+        db, owner_id=current_user.id, skip=skip, limit=limit, organization_id=organization_id
     )
-    total = project_service.count_projects(db, owner_id=current_user.id)
+    total = project_service.count_projects(db, owner_id=current_user.id, organization_id=organization_id)
     return ProjectListResponse(data=projects, total=total, skip=skip, limit=limit)
 
 

@@ -33,13 +33,32 @@ def _get_user_personal_workspace_id(db: Session, user_id: int) -> Optional[int]:
 
 
 def create_project(db: Session, project_in: ProjectCreate, owner_id: int) -> Project:
-    default_org_id = _get_user_personal_workspace_id(db, owner_id)
-    if not default_org_id:
-        raise ValueError("User does not have a valid organization to create projects.")
+    target_org_id = project_in.organization_id
+    if target_org_id is None:
+        target_org_id = _get_user_personal_workspace_id(db, owner_id)
+        if not target_org_id:
+            raise ValueError("User does not have a valid organization to create projects.")
+        check_organization_permission(db, owner_id, target_org_id, ["OWNER", "ADMIN"])
+    else:
+        from app.models.organization import Organization
+        from fastapi import HTTPException
+        org = db.query(Organization).filter(Organization.id == target_org_id).first()
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        member = db.query(OrganizationMember).filter(
+            OrganizationMember.user_id == owner_id,
+            OrganizationMember.organization_id == target_org_id
+        ).first()
+        
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        
+        if member.role not in ["OWNER", "ADMIN"]:
+            raise HTTPException(status_code=403, detail="You do not have enough privileges to perform this action")
     
-    check_organization_permission(db, owner_id, default_org_id, ["OWNER", "ADMIN"])
-    
-    db_project = Project(**project_in.model_dump(), owner_id=owner_id, organization_id=default_org_id)
+    dumped = project_in.model_dump(exclude={"organization_id"})
+    db_project = Project(**dumped, owner_id=owner_id, organization_id=target_org_id)
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
@@ -59,8 +78,25 @@ def get_project_by_id(db: Session, project_id: int, owner_id: int) -> Optional[P
 
 
 def list_projects(
-    db: Session, owner_id: int, skip: int = 0, limit: int = 100
+    db: Session, owner_id: int, skip: int = 0, limit: int = 100, organization_id: Optional[int] = None
 ) -> List[Project]:
+    if organization_id is not None:
+        from fastapi import HTTPException
+        member = db.query(OrganizationMember).filter(
+            OrganizationMember.user_id == owner_id,
+            OrganizationMember.organization_id == organization_id
+        ).first()
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        
+        return (
+            db.query(Project)
+            .filter(Project.organization_id == organization_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    
     org_ids = _get_user_organization_ids(db, owner_id)
     return (
         db.query(Project)
@@ -71,7 +107,18 @@ def list_projects(
     )
 
 
-def count_projects(db: Session, owner_id: int) -> int:
+def count_projects(db: Session, owner_id: int, organization_id: Optional[int] = None) -> int:
+    if organization_id is not None:
+        from fastapi import HTTPException
+        member = db.query(OrganizationMember).filter(
+            OrganizationMember.user_id == owner_id,
+            OrganizationMember.organization_id == organization_id
+        ).first()
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        
+        return db.query(Project).filter(Project.organization_id == organization_id).count()
+
     org_ids = _get_user_organization_ids(db, owner_id)
     return (
         db.query(Project)

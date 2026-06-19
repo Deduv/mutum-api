@@ -9,7 +9,7 @@ class ProjectBase(BaseModel):
 
 
 class ProjectCreate(ProjectBase):
-    pass
+    organization_id: Optional[int] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -21,6 +21,7 @@ class ProjectResponse(ProjectBase):
     id: int
     created_at: datetime
     owner_id: int
+    organization_id: int
 
     model_config = ConfigDict(from_attributes=True)
 
