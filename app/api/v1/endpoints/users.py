@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, get_current_active_user
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserListResponse
 from app.services import user_service
@@ -39,6 +39,34 @@ def read_user_me(current_user: User = Depends(get_current_user)):
     Get current user.
     """
     return current_user
+
+@router.get("/pending", response_model=UserListResponse)
+def read_pending_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Retrieve pending users.
+    """
+    users = user_service.get_pending_users(db)
+    return UserListResponse(data=users, total=len(users), skip=0, limit=len(users))
+
+@router.patch("/{user_id}/approve", response_model=UserResponse)
+def approve_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Approve a pending user.
+    """
+    user = user_service.get_user_by_id(db, user_id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user_service.approve_user(db, user=user)
 
 
 @router.get("/{user_id}", response_model=UserResponse)

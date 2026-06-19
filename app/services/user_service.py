@@ -51,3 +51,14 @@ def list_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
 
 def count_users(db: Session) -> int:
     return db.query(User).count()
+
+def get_pending_users(db: Session) -> List[User]:
+    return db.query(User).filter(User.status == "PENDING").all()
+
+def approve_user(db: Session, user: User) -> User:
+    if user.status != "ACTIVE":
+        user.status = "ACTIVE"
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
