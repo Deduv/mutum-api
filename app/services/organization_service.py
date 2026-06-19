@@ -93,8 +93,21 @@ def count_organizations(db: Session, user_id: int) -> int:
 
 def list_members(db: Session, organization_id: int, user_id: int):
     check_organization_permission(db, user_id, organization_id, ["OWNER", "ADMIN", "MEMBER"])
-    members = db.query(OrganizationMember).filter(OrganizationMember.organization_id == organization_id).all()
-    return members
+    from sqlalchemy.orm import joinedload
+    members = db.query(OrganizationMember).options(joinedload(OrganizationMember.user)).filter(OrganizationMember.organization_id == organization_id).all()
+    
+    enriched_members = []
+    for m in members:
+        enriched_members.append({
+            "id": m.id,
+            "user_id": m.user_id,
+            "organization_id": m.organization_id,
+            "role": m.role,
+            "joined_at": m.joined_at,
+            "name": m.user.name if m.user else None,
+            "email": m.user.email if m.user else ""
+        })
+    return enriched_members
 
 def add_member(db: Session, organization_id: int, member_in: OrganizationMemberCreate, user_id: int):
     check_organization_permission(db, user_id, organization_id, ["OWNER", "ADMIN"])
@@ -126,7 +139,18 @@ def add_member(db: Session, organization_id: int, member_in: OrganizationMemberC
     db.add(new_member)
     db.commit()
     db.refresh(new_member)
-    return new_member
+    
+    # Enrich
+    user = db.query(User).filter(User.id == new_member.user_id).first()
+    return {
+        "id": new_member.id,
+        "user_id": new_member.user_id,
+        "organization_id": new_member.organization_id,
+        "role": new_member.role,
+        "joined_at": new_member.joined_at,
+        "name": user.name if user else None,
+        "email": user.email if user else ""
+    }
 
 def update_member_role(db: Session, organization_id: int, target_user_id: int, member_in: OrganizationMemberUpdate, user_id: int):
     check_organization_permission(db, user_id, organization_id, ["OWNER", "ADMIN"])
@@ -135,7 +159,8 @@ def update_member_role(db: Session, organization_id: int, target_user_id: int, m
         OrganizationMember.user_id == user_id, OrganizationMember.organization_id == organization_id
     ).first()
     
-    target_member = db.query(OrganizationMember).filter(
+    from sqlalchemy.orm import joinedload
+    target_member = db.query(OrganizationMember).options(joinedload(OrganizationMember.user)).filter(
         OrganizationMember.user_id == target_user_id, OrganizationMember.organization_id == organization_id
     ).first()
     
@@ -161,7 +186,16 @@ def update_member_role(db: Session, organization_id: int, target_user_id: int, m
     db.add(target_member)
     db.commit()
     db.refresh(target_member)
-    return target_member
+    
+    return {
+        "id": target_member.id,
+        "user_id": target_member.user_id,
+        "organization_id": target_member.organization_id,
+        "role": target_member.role,
+        "joined_at": target_member.joined_at,
+        "name": target_member.user.name if target_member.user else None,
+        "email": target_member.user.email if target_member.user else ""
+    }
 
 def remove_member(db: Session, organization_id: int, target_user_id: int, user_id: int):
     check_organization_permission(db, user_id, organization_id, ["OWNER", "ADMIN"])

@@ -40,8 +40,8 @@ class OrganizationMemberResponse(BaseModel):
     organization_id: int
     role: OrganizationRole
     joined_at: datetime
-    # We can nest a simple UserResponse if needed, but not strictly required
-    # user: Optional[UserResponse] = None
+    name: Optional[str] = None
+    email: str
 
     class Config:
         from_attributes = True
