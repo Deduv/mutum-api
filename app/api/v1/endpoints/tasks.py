@@ -21,13 +21,14 @@ def create_task(
 def read_tasks(
     skip: int = 0,
     limit: int = 100,
+    organization_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     tasks = task_service.list_tasks(
-        db, owner_id=current_user.id, skip=skip, limit=limit
+        db, owner_id=current_user.id, skip=skip, limit=limit, organization_id=organization_id
     )
-    total = task_service.count_tasks(db, owner_id=current_user.id)
+    total = task_service.count_tasks(db, owner_id=current_user.id, organization_id=organization_id)
     return TaskListResponse(data=tasks, total=total, skip=skip, limit=limit)
 
 

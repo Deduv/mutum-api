@@ -81,27 +81,57 @@ def get_task_by_id(db: Session, task_id: int, owner_id: int) -> Optional[Task]:
 
 
 def list_tasks(
-    db: Session, owner_id: int, skip: int = 0, limit: int = 100
+    db: Session, owner_id: int, skip: int = 0, limit: int = 100, organization_id: Optional[int] = None
 ) -> List[Task]:
     org_ids = _get_user_organization_ids(db, owner_id)
-    return (
-        db.query(Task)
-        .join(Project)
-        .filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    query = db.query(Task).join(Project)
+    
+    if organization_id is not None:
+        from app.models.organization import Organization
+        org = db.query(Organization).filter(Organization.id == organization_id).first()
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+            
+        if organization_id not in org_ids:
+            has_legacy = db.query(Project).filter(
+                Project.organization_id == organization_id, 
+                Project.owner_id == owner_id
+            ).first()
+            if not has_legacy:
+                raise HTTPException(status_code=403, detail="You do not have access to this organization")
+                
+        query = query.filter(Project.organization_id == organization_id)
+        query = query.filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
+    else:
+        query = query.filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
+        
+    return query.offset(skip).limit(limit).all()
 
 
-def count_tasks(db: Session, owner_id: int) -> int:
+def count_tasks(db: Session, owner_id: int, organization_id: Optional[int] = None) -> int:
     org_ids = _get_user_organization_ids(db, owner_id)
-    return (
-        db.query(Task)
-        .join(Project)
-        .filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
-        .count()
-    )
+    query = db.query(Task).join(Project)
+    
+    if organization_id is not None:
+        from app.models.organization import Organization
+        org = db.query(Organization).filter(Organization.id == organization_id).first()
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+            
+        if organization_id not in org_ids:
+            has_legacy = db.query(Project).filter(
+                Project.organization_id == organization_id, 
+                Project.owner_id == owner_id
+            ).first()
+            if not has_legacy:
+                raise HTTPException(status_code=403, detail="You do not have access to this organization")
+                
+        query = query.filter(Project.organization_id == organization_id)
+        query = query.filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
+    else:
+        query = query.filter(or_(Project.organization_id.in_(org_ids), Project.owner_id == owner_id))
+        
+    return query.count()
 
 
 def update_task(db: Session, db_task: Task, task_in: TaskUpdate, owner_id: int) -> Task:
