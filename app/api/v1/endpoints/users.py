@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, get_current_active_user
+from app.api.deps import get_db, get_current_user, get_current_super_admin
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserListResponse
 from app.services import user_service
@@ -24,9 +24,14 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=UserListResponse)
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_super_admin),
+):
     """
-    Retrieve users.
+    Retrieve users. Requires super admin.
     """
     users = user_service.list_users(db, skip=skip, limit=limit)
     total = user_service.count_users(db)
@@ -43,10 +48,10 @@ def read_user_me(current_user: User = Depends(get_current_user)):
 @router.get("/pending", response_model=UserListResponse)
 def read_pending_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_super_admin),
 ):
     """
-    Retrieve pending users.
+    Retrieve pending users. Requires super admin.
     """
     users = user_service.get_pending_users(db)
     return UserListResponse(data=users, total=len(users), skip=0, limit=len(users))
@@ -55,10 +60,10 @@ def read_pending_users(
 def approve_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_super_admin),
 ):
     """
-    Approve a pending user.
+    Approve a pending user. Requires super admin.
     """
     user = user_service.get_user_by_id(db, user_id=user_id)
     if not user:
@@ -70,9 +75,13 @@ def approve_user(
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def read_user_by_id(user_id: int, db: Session = Depends(get_db)):
+def read_user_by_id(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_super_admin),
+):
     """
-    Get a specific user by id.
+    Get a specific user by id. Requires super admin.
     """
     user = user_service.get_user_by_id(db, user_id=user_id)
     if not user:
@@ -81,3 +90,4 @@ def read_user_by_id(user_id: int, db: Session = Depends(get_db)):
             detail="User not found",
         )
     return user
+

@@ -100,3 +100,34 @@ def auth_token_2(client, test_user_2):
     assert response.status_code == 200
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def super_admin_user(client, db_session):
+    user_data = {
+        "name": "Super Admin",
+        "email": "admin@pytest.com",
+        "password": "adminpassword",
+    }
+    response = client.post("/api/v1/users/", json=user_data)
+    assert response.status_code == 201
+    user_data["id"] = response.json()["id"]
+    user = db_session.query(User).filter(User.email == user_data["email"]).first()
+    user.status = "ACTIVE"
+    user.is_super_admin = True
+    db_session.commit()
+    return user_data
+
+
+@pytest.fixture(scope="function")
+def super_admin_token(client, super_admin_user):
+    response = client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": super_admin_user["email"],
+            "password": super_admin_user["password"],
+        },
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

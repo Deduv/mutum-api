@@ -47,3 +47,14 @@ def get_current_active_user(
     if current_user.status != "ACTIVE":
         raise HTTPException(status_code=403, detail="Inactive user")
     return current_user
+
+
+def get_current_super_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    if not current_user.is_super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+    return current_user
