@@ -1,4 +1,4 @@
-# DevBoard API
+# Mutum API
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
@@ -6,7 +6,7 @@
 ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-DevBoard API is a powerful and robust backend engine tailored for project and task management, designed specifically for small software development teams and independent professionals. 
+Mutum API is a multi-tenant backend engine tailored for project and task management. It supports organizations, role-based access control (RBAC), member approval workflows, and platform administration.
 
 Built with scalability, performance, and strict tenant isolation in mind, this API handles the complex relationships between users, their projects, and their tasks seamlessly, ensuring absolute data privacy.
 
@@ -70,7 +70,7 @@ The local development environment is fully encapsulated. You only need Docker an
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/seu-usuario/devboard.git
+   git clone https://github.com/your-username/devboard.git
    cd devboard
    ```
 2. Setup environment variables:
