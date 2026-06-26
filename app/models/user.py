@@ -17,7 +17,7 @@ class User(Base):
     name = Column(String, index=True)
     email = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
-    status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING, server_default=UserStatus.ACTIVE.value, nullable=False)
+    status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING, server_default=UserStatus.PENDING.value, nullable=False)
     is_super_admin = Column(Boolean, default=False, server_default="false", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
