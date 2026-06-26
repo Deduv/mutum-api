@@ -2,9 +2,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "DevBoard API"
+    PROJECT_NAME: str = "Mutum API"
     VERSION: str = "0.1.0"
-    DESCRIPTION: str = "API para gerenciamento de projetos e tarefas (DevBoard MVP)"
+    DESCRIPTION: str = (
+        "Multi-tenant API for project and task management. "
+        "Supports organizations, role-based access control (RBAC), "
+        "member approval workflow, and platform administration."
+    )
     API_V1_STR: str = "/api/v1"
 
     # Placeholders for future use
