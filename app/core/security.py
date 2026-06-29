@@ -36,3 +36,31 @@ def create_access_token(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
+
+def generate_email_token(email: str) -> str:
+    """Generates a signed JWT email verification token valid for 24 hours."""
+    expire = datetime.now(timezone.utc) + timedelta(hours=24)
+    to_encode = {
+        "exp": expire,
+        "sub": str(email),
+        "scope": "email_verification"
+    }
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+    return encoded_jwt
+
+
+def verify_email_token(token: str) -> Union[str, None]:
+    """Decodes and verifies the email verification token, returning the email if valid."""
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        if payload.get("scope") != "email_verification":
+            return None
+        return payload.get("sub")
+    except (jwt.PyJWTError, Exception):
+        return None
+
