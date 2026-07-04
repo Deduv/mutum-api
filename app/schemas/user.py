@@ -1,5 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_validator
-import re
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 from datetime import datetime
 from typing import Optional, List
 from app.models.user import UserStatus
@@ -7,15 +6,12 @@ from app.models.user import UserStatus
 
 class UserBase(BaseModel):
     name: Optional[str] = None
-    email: str
+    email: EmailStr
 
     @field_validator('email')
     @classmethod
     def validate_email(cls, v: str) -> str:
-        v = v.strip().lower()
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", v):
-            raise ValueError("Invalid email format")
-        return v
+        return v.strip().lower()
 
 
 class UserCreate(UserBase):
