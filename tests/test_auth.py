@@ -27,7 +27,6 @@ def test_login_success(client, db_session):
     
     user = db_session.query(User).filter(User.email == "login@example.com").first()
     user.status = "ACTIVE"
-    user.is_email_verified = True
     db_session.commit()
     
     response = client.post(

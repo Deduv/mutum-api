@@ -25,7 +25,6 @@ def test_user_login_with_different_case(client, db_session):
     user_in = UserCreate(email="user@example.com", password="password123")
     user = user_service.create_user(db_session, user_in=user_in)
     user.status = UserStatus.ACTIVE
-    user.is_email_verified = True
     db_session.add(user)
     db_session.commit()
     

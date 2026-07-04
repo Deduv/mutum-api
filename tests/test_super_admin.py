@@ -60,7 +60,7 @@ def test_super_admin_can_list_pending(client, super_admin_token):
     assert "data" in resp.json()
 
 
-def test_super_admin_can_approve(client, super_admin_token, db_session):
+def test_super_admin_can_approve(client, super_admin_token):
     """Super admin can approve a pending user."""
     resp = client.post(
         "/api/v1/users/",
@@ -71,12 +71,6 @@ def test_super_admin_can_approve(client, super_admin_token, db_session):
         },
     )
     user_id = resp.json()["id"]
-
-    # Verify email
-    from app.models.user import User
-    user = db_session.query(User).filter(User.email == "pending_sa@example.com").first()
-    user.is_email_verified = True
-    db_session.commit()
 
     resp = client.patch(
         f"/api/v1/users/{user_id}/approve", headers=super_admin_token

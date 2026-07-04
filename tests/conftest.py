@@ -61,7 +61,6 @@ def test_user(client, db_session):
     # Ativa o usuário no banco para permitir o login na suíte de testes
     user = db_session.query(User).filter(User.email == user_data["email"]).first()
     user.status = "ACTIVE"
-    user.is_email_verified = True
     db_session.commit()
     
     return user_data
@@ -89,7 +88,6 @@ def test_user_2(client, db_session):
     user_data["id"] = response.json()["id"]
     user = db_session.query(User).filter(User.email == user_data["email"]).first()
     user.status = "ACTIVE"
-    user.is_email_verified = True
     db_session.commit()
     return user_data
 
@@ -116,7 +114,6 @@ def super_admin_user(client, db_session):
     user_data["id"] = response.json()["id"]
     user = db_session.query(User).filter(User.email == user_data["email"]).first()
     user.status = "ACTIVE"
-    user.is_email_verified = True
     user.is_super_admin = True
     db_session.commit()
     return user_data

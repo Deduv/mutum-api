@@ -6,12 +6,6 @@ def test_list_pending_users(client, super_admin_token, db_session):
     )
     assert resp.status_code == 201
     
-    # Verify email so they appear in pending list
-    from app.models.user import User
-    user = db_session.query(User).filter(User.email == "pending@example.com").first()
-    user.is_email_verified = True
-    db_session.commit()
-    
     # Authenticate as super admin (only super admins can list pending users)
     resp = client.get("/api/v1/users/pending", headers=super_admin_token)
     assert resp.status_code == 200
@@ -41,19 +35,13 @@ def test_pending_user_cannot_access_list(client, db_session):
     assert resp.status_code == 403
     assert resp.json()["detail"] == "Inactive user"
 
-def test_approve_pending_user(client, super_admin_token, db_session):
+def test_approve_pending_user(client, super_admin_token):
     # Setup: Create a pending user
     resp = client.post(
         "/api/v1/users/",
         json={"email": "pending3@example.com", "password": "password123", "name": "Pending User 3"}
     )
     user_id = resp.json()["id"]
-    
-    # Verify email
-    from app.models.user import User
-    user = db_session.query(User).filter(User.email == "pending3@example.com").first()
-    user.is_email_verified = True
-    db_session.commit()
     
     # Approve as super admin (only super admins can approve users)
     resp = client.patch(f"/api/v1/users/{user_id}/approve", headers=super_admin_token)
