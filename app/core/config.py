@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # AWS SES Configuration
     AWS_ACCESS_KEY_ID: str | None = None
     AWS_SECRET_ACCESS_KEY: str | None = None
-    AWS_REGION: str = "sa-east-1"
+    AWS_REGION: str = "us-east-1"
     EMAILS_FROM_EMAIL: str | None = None
 
     # Frontend URL Configuration
