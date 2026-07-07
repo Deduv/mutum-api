@@ -29,6 +29,28 @@ async def send_telegram_message(text: str, reply_markup: dict = None):
     except Exception as e:
         logger.error(f"Failed to send Telegram message: {e}")
 
+async def edit_telegram_message(message_id: int, chat_id: int, text: str):
+    """
+    Edits an existing Telegram message.
+    """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        return
+
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/editMessageText"
+    payload = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text,
+        "parse_mode": "Markdown",
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=10.0)
+            response.raise_for_status()
+    except Exception as e:
+        logger.error(f"Failed to edit Telegram message: {e}")
+
 async def notify_new_user_pending(user):
     """
     Helper function to be run as a background task.

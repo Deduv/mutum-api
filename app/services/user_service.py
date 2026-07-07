@@ -62,3 +62,11 @@ def approve_user(db: Session, user: User) -> User:
         db.commit()
         db.refresh(user)
     return user
+
+def reject_user(db: Session, user: User) -> User:
+    if user.status != "SUSPENDED":
+        user.status = "SUSPENDED"
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
