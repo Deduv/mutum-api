@@ -63,10 +63,17 @@ def approve_user(db: Session, user: User) -> User:
         db.refresh(user)
     return user
 
-def reject_user(db: Session, user: User) -> User:
-    if user.status != "SUSPENDED":
-        user.status = "SUSPENDED"
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return user
+def reject_user(db: Session, user: User) -> None:
+    # Remove all organization member links first to satisfy FK constraints
+    members = db.query(OrganizationMember).filter(OrganizationMember.user_id == user.id).all()
+    for member in members:
+        # If this is their personal workspace and they are the owner, delete the org too
+        if member.role == OrganizationRole.OWNER:
+            org = db.query(Organization).filter(Organization.id == member.organization_id).first()
+            if org and org.name.startswith("Personal Workspace"):
+                db.delete(org)
+        db.delete(member)
+    
+    # Finally delete the user
+    db.delete(user)
+    db.commit()

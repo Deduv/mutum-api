@@ -82,6 +82,24 @@ def approve_user(
         )
     return user_service.approve_user(db, user=user)
 
+@router.delete("/{user_id}/reject", status_code=status.HTTP_204_NO_CONTENT)
+def reject_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_super_admin),
+):
+    """
+    Reject and delete a pending user. Requires super admin.
+    """
+    user = user_service.get_user_by_id(db, user_id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    user_service.reject_user(db, user=user)
+    return None
+
 
 @router.get("/{user_id}", response_model=UserResponse)
 def read_user_by_id(
