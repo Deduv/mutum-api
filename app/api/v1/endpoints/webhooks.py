@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.core.config import settings
 from app.services import user_service
-from app.services.telegram import edit_telegram_message
+from app.services.telegram import edit_telegram_message, answer_telegram_callback_query
 
 router = APIRouter()
 
@@ -18,6 +18,7 @@ async def telegram_webhook(secret: str, request: Request, db: Session = Depends(
         return {"status": "ignored"}
         
     callback_query = update["callback_query"]
+    callback_query_id = callback_query.get("id")
     message = callback_query.get("message")
     data = callback_query.get("data")
     
@@ -40,7 +41,8 @@ async def telegram_webhook(secret: str, request: Request, db: Session = Depends(
                 user_service.approve_user(db, user)
                 await edit_telegram_message(message_id, chat_id, f"✅ Usuário {user.name} aprovado com sucesso!")
             else:
-                await edit_telegram_message(message_id, chat_id, f"⚠️ Usuário {user_id} não encontrado.")
+                await answer_telegram_callback_query(callback_query_id, text="Este usuário já foi processado!", show_alert=True)
+                await edit_telegram_message(message_id, chat_id, f"⚠️ Usuário {user_id} não encontrado (já processado).")
         except ValueError:
             pass
             
@@ -53,7 +55,8 @@ async def telegram_webhook(secret: str, request: Request, db: Session = Depends(
                 user_service.reject_user(db, user)
                 await edit_telegram_message(message_id, chat_id, f"❌ Usuário {user.name} rejeitado/suspenso.")
             else:
-                await edit_telegram_message(message_id, chat_id, f"⚠️ Usuário {user_id} não encontrado.")
+                await answer_telegram_callback_query(callback_query_id, text="Este usuário já foi processado!", show_alert=True)
+                await edit_telegram_message(message_id, chat_id, f"⚠️ Usuário {user_id} não encontrado (já processado).")
         except ValueError:
             pass
             

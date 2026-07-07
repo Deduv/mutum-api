@@ -4,7 +4,8 @@ from app.api.deps import get_db, get_current_user, get_current_super_admin
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserListResponse
 from app.services import user_service
-from app.services.telegram import notify_new_user_pending
+from app.services.telegram import notify_new_user_pending, edit_telegram_message
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -27,7 +28,7 @@ def create_user(
     user = user_service.create_user(db, user_in=user_in)
     
     # Send telegram notification in background
-    background_tasks.add_task(notify_new_user_pending, user)
+    background_tasks.add_task(notify_new_user_pending, user.id)
     
     return user
 
@@ -68,6 +69,7 @@ def read_pending_users(
 @router.patch("/{user_id}/approve", response_model=UserResponse)
 def approve_user(
     user_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_super_admin),
 ):
@@ -80,11 +82,22 @@ def approve_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    return user_service.approve_user(db, user=user)
+    approved_user = user_service.approve_user(db, user=user)
+    
+    if approved_user.telegram_message_id:
+        background_tasks.add_task(
+            edit_telegram_message,
+            message_id=approved_user.telegram_message_id,
+            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+            text=f"✅ Usuário {approved_user.name} aprovado via Painel Admin."
+        )
+        
+    return approved_user
 
 @router.delete("/{user_id}/reject", status_code=status.HTTP_204_NO_CONTENT)
 def reject_user(
     user_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_super_admin),
 ):
@@ -98,6 +111,15 @@ def reject_user(
             detail="User not found",
         )
     user_service.reject_user(db, user=user)
+    
+    if user.telegram_message_id:
+        background_tasks.add_task(
+            edit_telegram_message,
+            message_id=user.telegram_message_id,
+            chat_id=settings.TELEGRAM_ADMIN_CHAT_ID,
+            text=f"❌ Usuário {user.name} removido via Painel Admin."
+        )
+        
     return None
 
 
