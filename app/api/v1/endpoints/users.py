@@ -1,15 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_current_super_admin
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserListResponse
 from app.services import user_service
+from app.services.telegram import notify_new_user_pending
 
 router = APIRouter()
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
+def create_user(
+    user_in: UserCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     """
     Create new user.
     """
@@ -20,6 +25,10 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
             detail="The user with this email already exists in the system.",
         )
     user = user_service.create_user(db, user_in=user_in)
+    
+    # Send telegram notification in background
+    background_tasks.add_task(notify_new_user_pending, user)
+    
     return user
 
 
