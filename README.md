@@ -10,6 +10,10 @@ Mutum API is a multi-tenant backend engine tailored for project and task managem
 
 Built with scalability, performance, and strict tenant isolation in mind, this API handles the complex relationships between users, their projects, and their tasks seamlessly, ensuring absolute data privacy.
 
+> [!WARNING]
+> **Organization Invitations System: In Development**
+> Please note that the "Organization Invitations" feature is currently incomplete. The development team is actively working on the implementation of this flow to allow users to invite members to their workspaces and manage incoming invitations. Full functionality will be delivered soon.
+
 ## Features
 - **Public User Registration**: Open registration for new accounts.
 - **User Approval Workflow**: New accounts start as `PENDING` and require manual approval to become `ACTIVE`.
